@@ -104,37 +104,24 @@ def panorama(H,fromim,toim,padding=2400,delta=2400):
     
     # check if images are grayscale or color
     is_color = len(fromim.shape) == 3
+
+    if is_color:
+        toim_zeros = zeros((toim.shape[0], padding, 3))
+    else:
+        toim_zeros = zeros((toim.shape[0], padding))
     
     if H[0,2]<0: # fromim is to the right
         print 'warp - right'
-        # transform fromim
-        if is_color:
-            # pad the destination image with zeros to the right
-            toim_t = hstack((toim, zeros((toim.shape[0], padding, 3))))
-            fromim_t = imtools.Htransform(
-                fromim, H, (toim.shape[0], toim.shape[1] + padding))
-        else:
-            # pad the destination image with zeros to the right
-            toim_t = hstack((toim,zeros((toim.shape[0],padding))))
-            fromim_t = imtools.Htransform(
-                fromim, H, (toim.shape[0], toim.shape[1] + padding))
+        toim_t = hstack((toim, toim_zeros))
     else:
         print 'warp - left'
         # add translation to compensate for padding to the left
         H_delta = array([[1,0,-delta],[0,1,0],[0,0,1]])
         H = dot(H,H_delta)
-        # transform fromim
-        if is_color:
-            # pad the destination image with zeros to the left
-            toim_t = hstack((zeros((toim.shape[0], padding, 3)), toim))
-            fromim_t = imtools.Htransform(
-                fromim, H, (toim.shape[0], toim.shape[1] + padding))
-        else:
-            # pad the destination image with zeros to the left
-            toim_t = hstack((zeros((toim.shape[0],padding)),toim))
-            fromim_t = imtools.Htransform(
-                fromim, H, (toim.shape[0], toim.shape[1] + padding))
+        toim_t = hstack((toim_zeros, toim))
     
+    fromim_t = imtools.Htransform(fromim, H, (toim_t.shape[0], toim_t.shape[1]))
+
     # blend and return (put fromim above toim)
     if is_color:
         # Three separate checks instead of a * b * c > 0 because of uint8 overflow.
